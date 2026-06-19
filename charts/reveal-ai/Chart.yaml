@@ -2,5 +2,5 @@ apiVersion: v2
 name: reveal-ai
 description: POC stand-in for the reveal-ai chart (wraps podinfo) — used to demo Kargo promotion
 type: application
-version: 0.1.0
-appVersion: "0.1.0"
+version: 0.2.0
+appVersion: "0.2.0"

@@ -1,0 +1,110 @@
+# dev -> uat -> prod. Each promotion bumps ALL THREE component image tags
+# (from one bundled Freight) in that env's values file. Git-only; each region's
+# own Argo CD auto-syncs. Steps inlined per stage so promotions work from UI or kubectl.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: dev
+  namespace: reveal-ai-poc
+spec:
+  requestedFreight:
+  - origin: { kind: Warehouse, name: reveal-ai }
+    sources: { direct: true }
+  promotionTemplate:
+    spec:
+      vars:
+      - { name: gitopsRepo, value: https://github.com/redreveal/kargo-poc.git }
+      - { name: valuesPath, value: envs/dev/us-east-1/values/reveal-ai.yaml }
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: ${{ vars.gitopsRepo }}
+          checkout:
+          - { branch: main, path: ./repo }
+      - uses: yaml-update
+        as: update
+        config:
+          path: ./repo/${{ vars.valuesPath }}
+          updates:
+          - { key: components.ai-service.image.tag, value: "${{ imageFrom('ghcr.io/stefanprodan/podinfo').Tag }}" }
+          - { key: components.frontend.image.tag,   value: "${{ imageFrom('public.ecr.aws/nginx/nginx').Tag }}" }
+          - { key: components.automation.image.tag, value: "${{ imageFrom('public.ecr.aws/docker/library/redis').Tag }}" }
+      - uses: git-commit
+        config:
+          path: ./repo
+          message: "kargo: promote reveal-ai components to ${{ ctx.stage }}"
+      - uses: git-push
+        config:
+          path: ./repo
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: uat
+  namespace: reveal-ai-poc
+spec:
+  requestedFreight:
+  - origin: { kind: Warehouse, name: reveal-ai }
+    sources: { stages: [dev] }
+  promotionTemplate:
+    spec:
+      vars:
+      - { name: gitopsRepo, value: https://github.com/redreveal/kargo-poc.git }
+      - { name: valuesPath, value: envs/uat/eu-west-1/values/reveal-ai.yaml }
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: ${{ vars.gitopsRepo }}
+          checkout:
+          - { branch: main, path: ./repo }
+      - uses: yaml-update
+        as: update
+        config:
+          path: ./repo/${{ vars.valuesPath }}
+          updates:
+          - { key: components.ai-service.image.tag, value: "${{ imageFrom('ghcr.io/stefanprodan/podinfo').Tag }}" }
+          - { key: components.frontend.image.tag,   value: "${{ imageFrom('public.ecr.aws/nginx/nginx').Tag }}" }
+          - { key: components.automation.image.tag, value: "${{ imageFrom('public.ecr.aws/docker/library/redis').Tag }}" }
+      - uses: git-commit
+        config:
+          path: ./repo
+          message: "kargo: promote reveal-ai components to ${{ ctx.stage }}"
+      - uses: git-push
+        config:
+          path: ./repo
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: prod
+  namespace: reveal-ai-poc
+spec:
+  requestedFreight:
+  - origin: { kind: Warehouse, name: reveal-ai }
+    sources: { stages: [uat] }
+  promotionTemplate:
+    spec:
+      vars:
+      - { name: gitopsRepo, value: https://github.com/redreveal/kargo-poc.git }
+      - { name: valuesPath, value: envs/prod/us-east-1/values/reveal-ai.yaml }
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: ${{ vars.gitopsRepo }}
+          checkout:
+          - { branch: main, path: ./repo }
+      - uses: yaml-update
+        as: update
+        config:
+          path: ./repo/${{ vars.valuesPath }}
+          updates:
+          - { key: components.ai-service.image.tag, value: "${{ imageFrom('ghcr.io/stefanprodan/podinfo').Tag }}" }
+          - { key: components.frontend.image.tag,   value: "${{ imageFrom('public.ecr.aws/nginx/nginx').Tag }}" }
+          - { key: components.automation.image.tag, value: "${{ imageFrom('public.ecr.aws/docker/library/redis').Tag }}" }
+      - uses: git-commit
+        config:
+          path: ./repo
+          message: "kargo: promote reveal-ai components to ${{ ctx.stage }}"
+      - uses: git-push
+        config:
+          path: ./repo

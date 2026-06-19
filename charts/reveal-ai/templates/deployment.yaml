@@ -1,37 +1,29 @@
+{{- range $name, $c := .Values.components }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: reveal-ai
+  name: reveal-ai-{{ $name }}
   labels:
     app: reveal-ai
+    component: {{ $name }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ $.Values.replicaCount }}
   selector:
     matchLabels:
       app: reveal-ai
+      component: {{ $name }}
   template:
     metadata:
       labels:
         app: reveal-ai
-        reveal-ai/env: {{ .Values.env | quote }}
-        reveal-ai/chart-version: {{ .Chart.Version | quote }}
+        component: {{ $name }}
+        reveal-ai/env: {{ $.Values.env | quote }}
+        reveal-ai/chart-version: {{ $.Chart.Version | quote }}
     spec:
       containers:
-      - name: reveal-ai
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        ports:
-        - name: http
-          containerPort: 9898
-        env:
-        # Makes the running version + env obvious in the podinfo UI and /env endpoint.
-        - name: PODINFO_UI_MESSAGE
-          value: "{{ .Values.message }} | chart {{ .Chart.Version }} | env {{ .Values.env }}"
-        livenessProbe:
-          httpGet: { path: /healthz, port: http }
-          initialDelaySeconds: 5
-        readinessProbe:
-          httpGet: { path: /readyz, port: http }
-          initialDelaySeconds: 5
+      - name: {{ $name }}
+        image: "{{ $c.image.repository }}:{{ $c.image.tag }}"
         resources:
-          {{- toYaml .Values.resources | nindent 10 }}
+          {{- toYaml $.Values.resources | nindent 10 }}
+{{- end }}

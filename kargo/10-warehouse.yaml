@@ -1,0 +1,22 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: reveal-ai
+  namespace: reveal-ai-poc
+spec:
+  interval: 1m0s
+  # One Warehouse, multiple images -> each Freight bundles the latest of ALL THREE,
+  # promoted together as one unit (mirrors reveal-ai's multi-component releases).
+  subscriptions:
+  - image:
+      repoURL: ghcr.io/stefanprodan/podinfo
+      semverConstraint: ">=6.7.1"
+      discoveryLimit: 5
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      semverConstraint: ">=1.27.0"
+      discoveryLimit: 5
+  - image:
+      repoURL: public.ecr.aws/docker/library/redis
+      semverConstraint: ">=7.2.0"
+      discoveryLimit: 5
