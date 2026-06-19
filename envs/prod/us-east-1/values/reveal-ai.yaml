@@ -1,4 +1,4 @@
 # Env-specific overrides for prod/us-east-1. Kargo promotes image.tag here.
 env: "prod"
 image:
-  tag: "6.7.1"
+  tag: 6.14.0
