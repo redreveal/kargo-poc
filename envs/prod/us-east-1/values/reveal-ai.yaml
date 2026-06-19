@@ -3,10 +3,10 @@ env: "prod"
 components:
   ai-service:
     image:
-      tag: "6.7.1"
+      tag: 6.14.0
   frontend:
     image:
-      tag: "1.27.0"
+      tag: 1.31.2
   automation:
     image:
-      tag: "7.2.0"
+      tag: 8.8.0
