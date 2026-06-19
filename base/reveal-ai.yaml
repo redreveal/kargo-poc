@@ -1,0 +1,3 @@
+# Shared reveal-ai values (mirrors platform-gitops/base/reveal-ai.yaml)
+message: "reveal-ai"
+replicaCount: 1

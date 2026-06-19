@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root-uat-eu-west-1
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/redreveal/kargo-poc.git
+    targetRevision: HEAD
+    path: envs/uat/eu-west-1/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

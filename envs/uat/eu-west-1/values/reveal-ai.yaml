@@ -1,0 +1,4 @@
+# Env-specific overrides for uat/eu-west-1. Kargo promotes image.tag here.
+env: "uat"
+image:
+  tag: "6.7.1"

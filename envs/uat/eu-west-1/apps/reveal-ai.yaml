@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: reveal-ai
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: https://github.com/redreveal/kargo-poc.git
+    targetRevision: HEAD
+    path: charts/reveal-ai
+    helm:
+      releaseName: reveal-ai
+      valueFiles:
+      - $values/base/reveal-ai.yaml
+      - $values/envs/uat/eu-west-1/values/reveal-ai.yaml
+  - repoURL: https://github.com/redreveal/kargo-poc.git
+    targetRevision: HEAD
+    ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: reveal-ai
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true

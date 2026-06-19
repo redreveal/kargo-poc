@@ -1,0 +1,4 @@
+# Env-specific overrides for dev/us-east-1. Kargo promotes image.tag here.
+env: "dev"
+image:
+  tag: "6.7.1"

@@ -1,0 +1,23 @@
+# Defaults; env-specific overrides come from envs/<env>/<region>/values/reveal-ai.yaml
+replicaCount: 1
+
+image:
+  repository: ghcr.io/stefanprodan/podinfo
+  tag: "6.7.1"
+  pullPolicy: IfNotPresent
+
+# Shown in the podinfo UI / banner so each env + chart version is visually distinct.
+env: "unknown"
+message: "reveal-ai"
+
+service:
+  type: ClusterIP
+  port: 9898
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi
