@@ -24,6 +24,11 @@ spec:
       containers:
       - name: {{ $name }}
         image: "{{ $c.image.repository }}:{{ $c.image.tag }}"
+        {{- if $c.port }}
+        ports:
+        - name: http
+          containerPort: {{ $c.port }}
+        {{- end }}
         resources:
           {{- toYaml $.Values.resources | nindent 10 }}
 {{- end }}

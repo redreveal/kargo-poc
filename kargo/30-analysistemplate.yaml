@@ -1,0 +1,19 @@
+# Verification for the dev stage (CONTROL model). Kargo runs this as an AnalysisRun
+# after the dev promotion; freight is only marked Verified (and thus eligible for uat)
+# if the real /healthz probe of the deployed ai-service passes.
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: dev-smoke
+  namespace: reveal-ai-poc
+spec:
+  metrics:
+  - name: ai-service-healthz
+    count: 3
+    interval: 10s
+    successCondition: 'result == "OK"'
+    failureLimit: 1
+    provider:
+      web:
+        url: http://reveal-ai-ai-service.reveal-ai.svc.cluster.local:9898/healthz
+        jsonPath: "{$.status}"

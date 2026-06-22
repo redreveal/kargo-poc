@@ -10,6 +10,7 @@ components:
     image:
       repository: ghcr.io/stefanprodan/podinfo
       tag: "6.7.1"
+    port: 9898          # exposes a Service so health/verification can probe it
   frontend:
     image:
       repository: public.ecr.aws/nginx/nginx
