@@ -1,0 +1,85 @@
+# OPTION B — CONTROL pipeline.
+# Kargo drives each region's Argo CD sync (argocd-update) AND gates promotion on a real
+# health check (spec.verification). dev works today (its Argo CD is on the hub cluster).
+# uat/prod use spec.shard so a Kargo AGENT in each remote cluster reconciles them and
+# talks to that cluster's local Argo CD — REQUIRES the agent connected (see kargo/README.md).
+# Each target Argo CD Application must be annotated kargo.akuity.io/authorized-stage.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: dev
+  namespace: reveal-ai-poc
+spec:
+  requestedFreight:
+  - origin: { kind: Warehouse, name: reveal-ai }
+    sources: { direct: true }
+  verification:
+    analysisTemplates:
+    - name: dev-smoke
+  promotionTemplate:
+    spec:
+      vars:
+      - { name: gitopsRepo, value: https://github.com/redreveal/kargo-poc.git }
+      - { name: valuesPath, value: envs/dev/us-east-1/values/reveal-ai.yaml }
+      steps: &controlSteps
+      - uses: git-clone
+        config:
+          repoURL: ${{ vars.gitopsRepo }}
+          checkout:
+          - { branch: main, path: ./repo }
+      - uses: yaml-update
+        as: update
+        config:
+          path: ./repo/${{ vars.valuesPath }}
+          updates:
+          - { key: components.ai-service.image.tag, value: "${{ imageFrom('ghcr.io/stefanprodan/podinfo').Tag }}" }
+          - { key: components.frontend.image.tag,   value: "${{ imageFrom('public.ecr.aws/nginx/nginx').Tag }}" }
+          - { key: components.automation.image.tag, value: "${{ imageFrom('public.ecr.aws/docker/library/redis').Tag }}" }
+      - uses: git-commit
+        config: { path: ./repo, message: "kargo: promote reveal-ai components to ${{ ctx.stage }}" }
+      - uses: git-push
+        config: { path: ./repo }
+      - uses: argocd-update
+        config:
+          apps:
+          - { name: reveal-ai, namespace: argocd }
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: uat
+  namespace: reveal-ai-poc
+spec:
+  shard: uat                       # reconciled by the Kargo agent in the uat cluster
+  requestedFreight:
+  - origin: { kind: Warehouse, name: reveal-ai }
+    sources: { stages: [dev] }
+  verification:
+    analysisTemplates:
+    - name: dev-smoke              # same probe; the uat agent runs it against uat's ai-service
+  promotionTemplate:
+    spec:
+      vars:
+      - { name: gitopsRepo, value: https://github.com/redreveal/kargo-poc.git }
+      - { name: valuesPath, value: envs/uat/eu-west-1/values/reveal-ai.yaml }
+      steps: *controlSteps
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: prod
+  namespace: reveal-ai-poc
+spec:
+  shard: prod                      # reconciled by the Kargo agent in the prod cluster
+  requestedFreight:
+  - origin: { kind: Warehouse, name: reveal-ai }
+    sources: { stages: [uat] }
+  verification:
+    analysisTemplates:
+    - name: dev-smoke
+  promotionTemplate:
+    spec:
+      vars:
+      - { name: gitopsRepo, value: https://github.com/redreveal/kargo-poc.git }
+      - { name: valuesPath, value: envs/prod/us-east-1/values/reveal-ai.yaml }
+      steps: *controlSteps
